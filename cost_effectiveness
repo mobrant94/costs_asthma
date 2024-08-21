@@ -1,0 +1,43 @@
+# SAMPLE SIZE CALCULATION - Asthma cost-effectiveness
+
+devtools::install_github("scossin/EBASS")
+
+library(EBASS)
+object_lambda <- create_object_lambda (53890)
+
+object_inmb <- create_object_inmb(de = 5.20, dc=280400, object_lambda = object_lambda)
+object_inmb$get_inmb()
+
+object_inmb_direct <- create_object_inmb_direct(inmb = -172)
+
+object_var_inmb <- create_object_var_inmb(sde=1.61, sdc=73096, rho=0.1, object_lambda=object_lambda)
+object_var_inmb$get_var_inmb()
+
+object_pop <- create_object_pop(horizon = 10, discount=0.05, N_year = 4814452)
+
+#https://www.ncbi.nlm.nih.gov/pmc/articles/PMC8236765/
+#9% asthma
+#3.2 severe asthma
+#26.83% - 19 anos - censo 2022
+#73.17% - >19 anos - censo 2022
+#203.080.756*0.7317 > 148594189 brasileiros maiores que 19 anos > 13373477 são asmáticos > 4279513 podem ter asma grave
+
+
+object_evpi_decrease <- create_object_evpi_decrease(object_inmb, object_pop, object_var_inmb)
+# As the allocation ratio is 1:1, setting a number of 150 participants
+# in the experimental group means we will have the same number in the reference group
+cat ("EVPI remaining after the inclusion of 40 participants : ",
+     object_evpi_decrease$set_N_exp(20), "\n",
+     "EVPI remaining after the inclusion of 42 participants : ",
+     object_evpi_decrease$set_N_exp(21))
+
+cat ("EVPI decrement between the inclusion of 40 and 42 participants : ",
+     object_evpi_decrease$set_N_exp(20) - object_evpi_decrease$set_N_exp(21))
+
+cat((object_evpi_decrease$set_N_exp(20) - object_evpi_decrease$set_N_exp(21)) - 2 * 295740)
+
+cost_indiv <- 12782782528
+n_subject <- sample_size(object_evpi_decrease = object_evpi_decrease, cost_indiv = cost_indiv)
+
+graph_gain_n(object_evpi_decrease, cost_indiv)
+
